@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Absensi Online - PT Struclab Jaya Konsultindo</title>
+<style>
+  :root {
+    --primary: #1a3c6e;
+    --secondary: #2563eb;
+    --accent: #f59e0b;
+    --success: #10b981;
+    --danger: #ef4444;
+    --bg: #f1f5f9;
+    --card: #ffffff;
+    --text: #1e293b;
+    --muted: #64748b;
+    --border: #e2e8f0;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* HEADER */
+  .header { background: var(--primary); color: #fff; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 8px rgba(0,0,0,.2); }
+  .header .logo { display: flex; align-items: center; gap: 10px; }
+  .header .logo span { font-size: 1.1rem; font-weight: 700; }
+  .header .logo small { font-size: .75rem; opacity: .75; display: block; }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  #userBadge { background: rgba(255,255,255,.15); padding: 4px 12px; border-radius: 20px; font-size: .85rem; }
+  #btnLogout { background: var(--danger); border: none; color: #fff; padding: 6px 14px; border-radius: 8px; cursor: pointer; font-size: .85rem; }
+
+  /* PAGES */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* LOGIN */
+  #loginPage { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: linear-gradient(135deg, #1a3c6e 0%, #2563eb 100%); }
+  .login-card { background: #fff; border-radius: 16px; padding: 40px 36px; width: 100%; max-width: 400px; box-shadow: 0 20px 60px rgba(0,0,0,.25); }
+  .login-card .brand { text-align: center; margin-bottom: 28px; }
+  .login-card .brand h2 { color: var(--primary); font-size: 1.3rem; }
+  .login-card .brand p { color: var(--muted); font-size: .85rem; margin-top: 4px; }
+  .login-card .icon-wrap { width: 64px; height: 64px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; }
+  .login-card .icon-wrap svg { fill: #fff; width: 32px; height: 32px; }
+  .form-group { margin-bottom: 16px; }
+  .form-group label { display: block; font-size: .85rem; font-weight: 600; margin-bottom: 6px; color: var(--text); }
+  .form-group input, .form-group select { width: 100%; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 8px; font-size: .95rem; outline: none; transition: border .2s; }
+  .form-group input:focus, .form-group select:focus { border-color: var(--secondary); }
+  .btn-primary { width: 100%; padding: 12px; background: var(--primary); color: #fff; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background .2s; }
+  .btn-primary:hover { background: var(--secondary); }
+  .login-err { color: var(--danger); font-size: .82rem; margin-top: 8px; text-align: center; display: none; }
+
+  /* MAIN APP */
+  #appPage { display: none; }
+  #appPage.active { display: block; }
+  .container { max-width: 960px; margin: 0 auto; padding: 24px 16px; }
+
+  /* TABS */
+  .tabs { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
+  .tab-btn { padding: 9px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: .9rem; font-weight: 600; background: var(--card); color: var(--muted); border: 1.5px solid var(--border); transition: all .2s; }
+  .tab-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+  /* CARDS */
+  .card { background: var(--card); border-radius: 12px; padding: 24px; box-shadow: 0 2px 12px rgba(0,0,0,.07); margin-bottom: 20px; }
+  .card h3 { font-size: 1rem; color: var(--primary); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+
+  /* STATUS BAR */
+  .status-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 20px; }
+  .stat-card { background: var(--card); border-radius: 12px; padding: 18px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,.07); border-left: 4px solid var(--secondary); }
+  .stat-card.green { border-color: var(--success); }
+  .stat-card.orange { border-color: var(--accent); }
+  .stat-card .val { font-size: 1.6rem; font-weight: 700; color: var(--primary); }
+  .stat-card .lbl { font-size: .78rem; color: var(--muted); margin-top: 2px; }
+
+  /* ABSENSI */
+  .absen-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media(max-width:600px){ .absen-grid { grid-template-columns: 1fr; } }
+
+  /* CAMERA */
+  .cam-wrap { position: relative; border-radius: 10px; overflow: hidden; background: #000; aspect-ratio: 4/3; }
+  #videoEl { width: 100%; height: 100%; object-fit: cover; display: block; }
+  #canvasEl { display: none; }
+  #photoPreview { width: 100%; border-radius: 10px; display: none; }
+  .cam-btn { margin-top: 10px; padding: 9px 16px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: .88rem; width: 100%; }
+  .cam-btn.snap { background: var(--secondary); color: #fff; }
+  .cam-btn.retake { background: var(--muted); color: #fff; }
+
+  /* GPS */
+  .gps-box { background: var(--bg); border-radius: 8px; padding: 12px 14px; font-size: .85rem; color: var(--muted); margin-top: 10px; min-height: 48px; }
+  .gps-box .coords { color: var(--text); font-weight: 600; font-size: .9rem; }
+  .gps-box .addr { margin-top: 4px; color: var(--muted); font-size: .8rem; }
+
+  /* ABSEN BUTTONS */
+  .absen-actions { display: flex; gap: 12px; margin-top: 16px; }
+  .btn-checkin { flex: 1; padding: 13px; background: var(--success); color: #fff; border: none; border-radius: 10px; font-size: 1rem; font-weight: 700; cursor: pointer; }
+  .btn-checkout { flex: 1; padding: 13px; background: var(--danger); color: #fff; border: none; border-radius: 10px; font-size: 1rem; font-weight: 700; cursor: pointer; }
+  .btn-checkin:disabled, .btn-checkout:disabled { opacity: .4; cursor: not-allowed; }
+
+  /* TODAY STATUS */
+  .today-status { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 4px; }
+  .ts-item { background: var(--bg); border-radius: 8px; padding: 10px 16px; flex: 1; min-width: 120px; }
+  .ts-item .ts-lbl { font-size: .75rem; color: var(--muted); }
+  .ts-item .ts-val { font-size: 1rem; font-weight: 700; color: var(--primary); margin-top: 2px; }
+
+  /* TABLE */
+  .tbl-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+  thead th { background: var(--primary); color: #fff; padding: 10px 12px; text-align: left; font-weight: 600; }
+  tbody tr:nth-child(even) { background: var(--bg); }
+  tbody td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: .75rem; font-weight: 600; }
+  .badge.hadir { background: #d1fae5; color: #065f46; }
+  .badge.terlambat { background: #fef3c7; color: #92400e; }
+  .badge.alpha { background: #fee2e2; color: #991b1b; }
+  .thumb { width: 36px; height: 36px; border-radius: 6px; object-fit: cover; cursor: pointer; }
+
+  /* FILTER */
+  .filter-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
+  .filter-row select, .filter-row input { padding: 8px 12px; border: 1.5px solid var(--border); border-radius: 8px; font-size: .88rem; outline: none; }
+  .btn-export { padding: 8px 18px; background: var(--success); color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: .88rem; font-weight: 600; }
+
+  /* ADMIN */
+  .admin-lock { text-align: center; padding: 20px; }
+  .admin-lock input { padding: 9px 14px; border: 1.5px solid var(--border); border-radius: 8px; margin-right: 8px; outline: none; }
+  .admin-lock button { padding: 9px 18px; background: var(--primary); color: #fff; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; }
+
+  /* MODAL */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 999; align-items: center; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal-box { background: #fff; border-radius: 12px; padding: 24px; max-width: 360px; width: 90%; text-align: center; }
+  .modal-box img { width: 100%; border-radius: 8px; margin-bottom: 12px; }
+  .modal-box p { font-size: .85rem; color: var(--muted); }
+  .modal-close { margin-top: 14px; padding: 8px 24px; background: var(--primary); color: #fff; border: none; border-radius: 8px; cursor: pointer; }
+
+  /* TOAST */
+  #toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1e293b; color: #fff; padding: 11px 22px; border-radius: 10px; font-size: .9rem; opacity: 0; pointer-events: none; transition: opacity .3s; z-index: 9999; }
+  #toast.show { opacity: 1; }
+
+  .section-tab { display: none; }
+  .section-tab.active { display: block; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginPage" class="page active">
+  <div class="login-card">
+    <div class="brand">
+      <div class="icon-wrap">
+        <svg viewBox="0 0 24 24"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>
+      </div>
+      <h2>PT Struclab Jaya Konsultindo</h2>
+      <p>Sistem Absensi Online</p>
+    </div>
+    <div class="form-group">
+      <label>Nama Karyawan</label>
+      <input id="loginName" type="text" placeholder="Masukkan nama lengkap">
+    </div>
+    <div class="form-group">
+      <label>ID Karyawan</label>
+      <input id="loginId" type="text" placeholder="Contoh: SJK-001">
+    </div>
+    <div class="form-group">
+      <label>Departemen</label>
+      <select id="loginDept">
+        <option value="">-- Pilih Departemen --</option>
+        <option>Struktur</option>
+        <option>Arsitek</option>
+        <option>MEP</option>
+        <option>Manajemen Konstruksi</option>
+        <option>HRD & Keuangan</option>
+        <option>IT & Administrasi</option>
+      </select>
+    </div>
+    <button class="btn-primary" onclick="doLogin()">Masuk</button>
+    <p class="login-err" id="loginErr">Harap isi semua field!</p>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="appPage" class="page">
+  <div class="header">
+    <div class="logo">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="white"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+      <div>
+        <span>Absensi Online</span>
+        <small>PT Struclab Jaya Konsultindo</small>
+      </div>
+    </div>
+    <div class="header-right">
+      <span id="userBadge">-</span>
+      <button id="btnLogout" onclick="doLogout()">Keluar</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <!-- TABS -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('absen')">📍 Absensi</button>
+      <button class="tab-btn" onclick="switchTab('rekap')">📊 Rekap Saya</button>
+      <button class="tab-btn" onclick="switchTab('admin')">🔐 Admin</button>
+    </div>
+
+    <!-- STATS -->
+    <div class="status-bar">
+      <div class="stat-card"><div class="val" id="statHadir">0</div><div class="lbl">Hadir Bulan Ini</div></div>
+      <div class="stat-card green"><div class="val" id="statTepat">0</div><div class="lbl">Tepat Waktu</div></div>
+      <div class="stat-card orange"><div class="val" id="statTerlambat">0</div><div class="lbl">Terlambat</div></div>
+    </div>
+
+    <!-- ABSEN TAB -->
+    <div id="tab-absen" class="section-tab active">
+      <div class="card">
+        <h3>📅 Status Hari Ini — <span id="todayDate"></span></h3>
+        <div class="today-status">
+          <div class="ts-item"><div class="ts-lbl">Check-in</div><div class="ts-val" id="ciTime">—</div></div>
+          <div class="ts-item"><div class="ts-lbl">Check-out</div><div class="ts-val" id="coTime">—</div></div>
+          <div class="ts-item"><div class="ts-lbl">Status</div><div class="ts-val" id="todayStatus">—</div></div>
+        </div>
+      </div>
+
+      <div class="absen-grid">
+        <!-- KAMERA -->
+        <div class="card">
+          <h3>📷 Foto Selfie</h3>
+          <div class="cam-wrap">
+            <video id="videoEl" autoplay playsinline></video>
+            <canvas id="canvasEl"></canvas>
+          </div>
+          <img id="photoPreview" alt="Foto Absen">
+          <button class="cam-btn snap" id="snapBtn" onclick="snapPhoto()">📸 Ambil Foto</button>
+          <button class="cam-btn retake" id="retakeBtn" onclick="retakePhoto()" style="display:none">🔄 Ulangi</button>
+        </div>
+
+        <!-- GPS + AKSI -->
+        <div class="card">
+          <h3>📍 Lokasi GPS</h3>
+          <button class="cam-btn snap" onclick="getLocation()" style="background:var(--accent);color:#fff">🛰️ Deteksi Lokasi</button>
+          <div class="gps-box" id="gpsBox">
+            <span>Klik tombol untuk mendeteksi lokasi...</span>
+          </div>
+
+          <div style="margin-top:20px">
+            <h3>⏱️ Rekam Kehadiran</h3>
+            <div class="absen-actions">
+              <button class="btn-checkin" id="btnCI" onclick="doCheckin()">✅ Check-in</button>
+              <button class="btn-checkout" id="btnCO" onclick="doCheckout()" disabled>🚪 Check-out</button>
+            </div>
+            <p style="font-size:.78rem;color:var(--muted);margin-top:8px">*Foto & lokasi wajib diisi sebelum absen</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- REKAP TAB -->
+    <div id="tab-rekap" class="section-tab">
+      <div class="card">
+        <h3>📊 Riwayat Kehadiran</h3>
+        <div class="filter-row">
+          <select id="filterBulan" onchange="renderRekap()">
+            <option value="">Semua Bulan</option>
+          </select>
+          <input type="text" id="filterSearch" placeholder="Cari tanggal..." oninput="renderRekap()" style="width:160px">
+          <button class="btn-export" onclick="exportCSV()">⬇️ Export CSV</button>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Tanggal</th><th>Check-in</th><th>Check-out</th><th>Status</th><th>Lokasi</th><th>Foto</th></tr></thead>
+            <tbody id="rekapBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ADMIN TAB -->
+    <div id="tab-admin" class="section-tab">
+      <div class="card" id="adminLockCard">
+        <h3>🔐 Akses Admin</h3>
+        <div class="admin-lock">
+          <p style="margin-bottom:14px;color:var(--muted)">Masukkan PIN Admin untuk melanjutkan</p>
+          <input type="password" id="adminPin" placeholder="PIN Admin" maxlength="6">
+          <button onclick="unlockAdmin()">Masuk</button>
+          <p style="font-size:.75rem;color:var(--muted);margin-top:8px">Default PIN: <b>123456</b></p>
+        </div>
+      </div>
+      <div id="adminContent" style="display:none">
+        <div class="card">
+          <h3>👥 Semua Data Kehadiran Karyawan</h3>
+          <div class="filter-row">
+            <select id="adminFilterBulan" onchange="renderAdmin()"></select>
+            <input type="text" id="adminSearch" placeholder="Cari nama / ID..." oninput="renderAdmin()" style="width:180px">
+            <button class="btn-export" onclick="exportAdminCSV()">⬇️ Export CSV</button>
+          </div>
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr><th>Nama</th><th>ID</th><th>Dept</th><th>Tanggal</th><th>Check-in</th><th>Check-out</th><th>Status</th><th>Lokasi</th><th>Foto</th></tr></thead>
+              <tbody id="adminBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL FOTO -->
+<div class="modal-overlay" id="photoModal">
+  <div class="modal-box">
+    <img id="modalImg" src="" alt="Foto Absen">
+    <p id="modalCaption"></p>
+    <button class="modal-close" onclick="closeModal()">Tutup</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+// ===== STATE =====
+let currentUser = null;
+let stream = null;
+let photoData = null;
+let gpsData = null;
+let todayRecord = null;
+
+const CHECKIN_LIMIT = '08:00';
+const ADMIN_PIN = '123456';
+
+// ===== UTILS =====
+const $ = id => document.getElementById(id);
+const fmt = d => new Date(d).toLocaleDateString('id-ID',{weekday:'short',day:'2-digit',month:'short',year:'numeric'});
+const fmtT = d => new Date(d).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
+const today = () => new Date().toISOString().split('T')[0];
+const nowStr = () => new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+
+function showToast(msg, dur=2800) {
+  const t = $('toast'); t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), dur);
+}
+
+// ===== STORAGE =====
+function getAllRecords() {
+  try { return JSON.parse(localStorage.getItem('sjk_absensi') || '[]'); } catch { return []; }
+}
+function saveRecords(r) { localStorage.setItem('sjk_absensi', JSON.stringify(r)); }
+function getUserRecords(uid) { return getAllRecords().filter(r => r.userId === uid); }
+
+// ===== LOGIN =====
+function doLogin() {
+  const name = $('loginName').value.trim();
+  const id = $('loginId').value.trim();
+  const dept = $('loginDept').value;
+  if (!name || !id || !dept) { $('loginErr').style.display='block'; return; }
+  $('loginErr').style.display='none';
+  currentUser = { name, id, dept };
+  $('userBadge').textContent = `${name} (${id})`;
+  showPage('appPage');
+  startCamera();
+  initApp();
+}
+
+function doLogout() {
+  stopCamera(); currentUser = null; photoData = null; gpsData = null;
+  $('loginName').value=''; $('loginId').value=''; $('loginDept').value='';
+  showPage('loginPage');
+}
+
+// ===== PAGES =====
+function showPage(p) {
+  document.querySelectorAll('.page').forEach(el => { el.classList.remove('active'); el.style.display='none'; });
+  const pg = $(p); pg.classList.add('active'); pg.style.display = p==='loginPage' ? 'flex' : 'block';
+}
+
+// ===== TABS =====
+function switchTab(name) {
+  document.querySelectorAll('.section-tab').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el=>el.classList.remove('active'));
+  $(`tab-${name}`).classList.add('active');
+  event.target.classList.add('active');
+  if (name==='rekap') renderRekap();
+  if (name==='admin') { $('adminContent').style.display='none'; $('adminLockCard').style.display='block'; }
+}
+
+// ===== CAMERA =====
+async function startCamera() {
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:false});
+    $('videoEl').srcObject = stream;
+    $('videoEl').style.display='block';
+    $('photoPreview').style.display='none';
+    $('snapBtn').style.display='block';
+    $('retakeBtn').style.display='none';
+    photoData = null;
+  } catch(e) { showToast('⚠️ Kamera tidak tersedia: '+e.message); }
+}
+
+function stopCamera() { if(stream) { stream.getTracks().forEach(t=>t.stop()); stream=null; } }
+
+function snapPhoto() {
+  const v = $('videoEl'), c = $('canvasEl');
+  c.width = v.videoWidth || 320; c.height = v.videoHeight || 240;
+  c.getContext('2d').drawImage(v,0,0,c.width,c.height);
+  photoData = c.toDataURL('image/jpeg', 0.7);
+  $('photoPreview').src = photoData;
+  $('photoPreview').style.display='block';
+  $('videoEl').style.display='none';
+  $('snapBtn').style.display='none';
+  $('retakeBtn').style.display='block';
+  stopCamera();
+  showToast('✅ Foto berhasil diambil!');
+}
+
+function retakePhoto() { photoData=null; startCamera(); }
+
+// ===== GPS =====
+function getLocation() {
+  const box = $('gpsBox');
+  box.innerHTML='<span>🛰️ Mendeteksi lokasi...</span>';
+  if (!navigator.geolocation) { box.innerHTML='<span>GPS tidak didukung browser ini.</span>'; return; }
+  navigator.geolocation.getCurrentPosition(pos => {
+    const lat = pos.coords.latitude.toFixed(6), lng = pos.coords.longitude.toFixed(6);
+    gpsData = { lat, lng };
+    box.innerHTML = `<div class="coords">📍 ${lat}, ${lng}</div><div class="addr">Akurasi: ±${Math.round(pos.coords.accuracy)}m</div>`;
+    showToast('✅ Lokasi terdeteksi!');
+  }, err => {
+    box.innerHTML='<span>❌ Gagal deteksi: '+err.message+'</span>';
+    showToast('❌ GPS gagal: '+err.message);
+  }, {enableHighAccuracy:true,timeout:10000});
+}
+
+// ===== ABSENSI =====
+function initApp() {
+  const td = today();
+  $('todayDate').textContent = fmt(td);
+  fillFilterBulan();
+  loadTodayStatus();
+  updateStats();
+}
+
+function loadTodayStatus() {
+  const records = getUserRecords(currentUser.id);
+  todayRecord = records.find(r => r.date === today()) || null;
+  if (todayRecord) {
+    $('ciTime').textContent = todayRecord.checkin || '—';
+    $('coTime').textContent = todayRecord.checkout || '—';
+    $('todayStatus').textContent = todayRecord.status || '—';
+    if (todayRecord.checkin) { $('btnCI').disabled=true; $('btnCO').disabled=false; }
+    if (todayRecord.checkout) { $('btnCO').disabled=true; }
+  } else {
+    $('ciTime').textContent='—'; $('coTime').textContent='—'; $('todayStatus').textContent='—';
+    $('btnCI').disabled=false; $('btnCO').disabled=true;
+  }
+}
+
+function doCheckin() {
+  if (!photoData) { showToast('⚠️ Ambil foto selfie terlebih dahulu!'); return; }
+  if (!gpsData) { showToast('⚠️ Deteksi lokasi GPS terlebih dahulu!'); return; }
+  const now = new Date();
+  const timeStr = fmtT(now);
+  const [hh,mm] = timeStr.split(':').map(Number);
+  const [lhh,lmm] = CHECKIN_LIMIT.split(':').map(Number);
+  const status = (hh > lhh || (hh===lhh && mm>lmm)) ? 'Terlambat' : 'Tepat Waktu';
+  const rec = {
+    userId: currentUser.id, userName: currentUser.name, dept: currentUser.dept,
+    date: today(), checkin: timeStr, checkout: null,
+    status, lat: gpsData.lat, lng: gpsData.lng,
+    photoIn: photoData, photoOut: null,
+    ts: Date.now()
+  };
+  const all = getAllRecords();
+  all.push(rec); saveRecords(all);
+  todayRecord = rec;
+  $('ciTime').textContent=timeStr; $('todayStatus').textContent=status;
+  $('btnCI').disabled=true; $('btnCO').disabled=false;
+  updateStats();
+  showToast(`✅ Check-in berhasil! Status: ${status}`);
+}
+
+function doCheckout() {
+  if (!photoData) { showToast('⚠️ Ambil foto selfie untuk check-out!'); return; }
+  if (!gpsData) { showToast('⚠️ Deteksi lokasi GPS!'); return; }
+  const timeStr = fmtT(new Date());
+  const all = getAllRecords();
+  const idx = all.findIndex(r=>r.userId===currentUser.id && r.date===today());
+  if (idx===-1) { showToast('❌ Data check-in tidak ditemukan.'); return; }
+  all[idx].checkout = timeStr;
+  all[idx].photoOut = photoData;
+  saveRecords(all);
+  todayRecord = all[idx];
+  $('coTime').textContent=timeStr;
+  $('btnCO').disabled=true;
+  updateStats();
+  showToast(`✅ Check-out berhasil pukul ${timeStr}!`);
+}
+
+// ===== STATS =====
+function updateStats() {
+  const m = new Date().getMonth();
+  const y = new Date().getFullYear();
+  const recs = getUserRecords(currentUser.id).filter(r=>{
+    const d = new Date(r.date); return d.getMonth()===m && d.getFullYear()===y && r.checkin;
+  });
+  $('statHadir').textContent = recs.length;
+  $('statTepat').textContent = recs.filter(r=>r.status==='Tepat Waktu').length;
+  $('statTerlambat').textContent = recs.filter(r=>r.status==='Terlambat').length;
+}
+
+// ===== REKAP =====
+function fillFilterBulan() {
+  const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sep','Okt','Nov','Des'];
+  const opts = ['<option value="">Semua Bulan</option>'];
+  for(let i=0;i<12;i++) opts.push(`<option value="${i}">${months[i]} ${new Date().getFullYear()}</option>`);
+  $('filterBulan').innerHTML = opts.join('');
+  const adminFilter = $('adminFilterBulan');
+  if(adminFilter) adminFilter.innerHTML = opts.join('');
+}
+
+function renderRekap() {
+  const recs = getUserRecords(currentUser.id);
+  const bln = $('filterBulan').value;
+  const srch = $('filterSearch').value.toLowerCase();
+  const filtered = recs.filter(r => {
+    const d = new Date(r.date);
+    const mOk = bln==='' || d.getMonth()===parseInt(bln);
+    const sOk = r.date.includes(srch) || fmt(r.date).toLowerCase().includes(srch);
+    return mOk && sOk;
+  }).sort((a,b)=>b.ts-a.ts);
+
+  $('rekapBody').innerHTML = filtered.length ? filtered.map(r=>`
+    <tr>
+      <td>${fmt(r.date)}</td>
+      <td>${r.checkin||'—'}</td>
+      <td>${r.checkout||'—'}</td>
+      <td><span class="badge ${r.status==='Tepat Waktu'?'hadir':'terlambat'}">${r.status}</span></td>
+      <td style="font-size:.78rem">${r.lat},<br>${r.lng}</td>
+      <td>${r.photoIn?`<img class="thumb" src="${r.photoIn}" onclick="openModal('${r.photoIn}','Check-in ${fmt(r.date)}')">`:'-'}
+          ${r.photoOut?`<img class="thumb" src="${r.photoOut}" onclick="openModal('${r.photoOut}','Check-out ${fmt(r.date)}')">`:''}</td>
+    </tr>`).join('') : '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:20px">Tidak ada data</td></tr>';
+}
+
+// ===== ADMIN =====
+function unlockAdmin() {
+  if ($('adminPin').value === ADMIN_PIN) {
+    $('adminLockCard').style.display='none';
+    $('adminContent').style.display='block';
+    fillAdminFilter();
+    renderAdmin();
+  } else { showToast('❌ PIN salah!'); }
+}
+
+function fillAdminFilter() {
+  const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sep','Okt','Nov','Des'];
+  const opts = ['<option value="">Semua Bulan</option>'];
+  for(let i=0;i<12;i++) opts.push(`<option value="${i}">${months[i]} ${new Date().getFullYear()}</option>`);
+  $('adminFilterBulan').innerHTML = opts.join('');
+}
+
+function renderAdmin() {
+  const all = getAllRecords();
+  const bln = $('adminFilterBulan').value;
+  const srch = ($('adminSearch').value||'').toLowerCase();
+  const filtered = all.filter(r=>{
+    const d = new Date(r.date);
+    const mOk = bln==='' || d.getMonth()===parseInt(bln);
+    const sOk = !srch || r.userName.toLowerCase().includes(srch) || r.userId.toLowerCase().includes(srch);
+    return mOk && sOk;
+  }).sort((a,b)=>b.ts-a.ts);
+
+  $('adminBody').innerHTML = filtered.length ? filtered.map(r=>`
+    <tr>
+      <td>${r.userName}</td><td>${r.userId}</td><td>${r.dept}</td>
+      <td>${fmt(r.date)}</td>
+      <td>${r.checkin||'—'}</td><td>${r.checkout||'—'}</td>
+      <td><span class="badge ${r.status==='Tepat Waktu'?'hadir':'terlambat'}">${r.status}</span></td>
+      <td style="font-size:.78rem">${r.lat},${r.lng}</td>
+      <td>${r.photoIn?`<img class="thumb" src="${r.photoIn}" onclick="openModal('${r.photoIn}','${r.userName}')">`:'-'}</td>
+    </tr>`).join('') : '<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:20px">Tidak ada data</td></tr>';
+}
+
+// ===== EXPORT CSV =====
+function exportCSV() {
+  const recs = getUserRecords(currentUser.id).sort((a,b)=>b.ts-a.ts);
+  if (!recs.length) { showToast('Tidak ada data untuk diekspor'); return; }
+  const rows = [['Tanggal','Check-in','Check-out','Status','Latitude','Longitude']];
+  recs.forEach(r=>rows.push([r.date, r.checkin||'', r.checkout||'', r.status, r.lat, r.lng]));
+  dlCSV(rows, `Absensi_${currentUser.id}_${today()}.csv`);
+}
+
+function exportAdminCSV() {
+  const all = getAllRecords().sort((a,b)=>b.ts-a.ts);
+  if (!all.length) { showToast('Tidak ada data'); return; }
+  const rows = [['Nama','ID','Departemen','Tanggal','Check-in','Check-out','Status','Lat','Lng']];
+  all.forEach(r=>rows.push([r.userName,r.userId,r.dept,r.date,r.checkin||'',r.checkout||'',r.status,r.lat,r.lng]));
+  dlCSV(rows, `Semua_Absensi_${today()}.csv`);
+}
+
+function dlCSV(rows, filename) {
+  const csv = rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);
+  a.download = filename; a.click();
+  showToast('✅ File CSV berhasil diunduh!');
+}
+
+// ===== MODAL =====
+function openModal(src, cap) {
+  $('modalImg').src=src; $('modalCaption').textContent=cap;
+  $('photoModal').classList.add('open');
+}
+function closeModal() { $('photoModal').classList.remove('open'); }
+
+// ===== INIT =====
+showPage('loginPage');
+</script>
+</body>
+</html>
